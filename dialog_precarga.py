@@ -114,7 +114,7 @@ class dialog_precarga(DialogUi, DialogType):
             else:
                 self.cerrar()
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>Error en la ruta del modelo</b>', level=0, duration=7)
+                    '<b>Error en la ruta del modelo</b>', level=0, duration=7)
                 return None
         else:
             #verificando correcta asignacion del nombre del modelo
@@ -146,14 +146,7 @@ class dialog_precarga(DialogUi, DialogType):
             src=imagen.crs()
             extension=imagen.extent()
             device=self.device.currentText()
-            if device=='CPU':
-                device='cpu'
-            else:
-                if torch.cuda.is_available():
-                    device='cuda'
-                else:
-                    device='cpu'
-                    #print('GPU no disponible se utiliza el cpu')
+            device = 'cuda' if device != 'CPU' and torch.cuda.is_available() else 'cpu'
             ruta_modelo=ruta
             #captar primeras bandas con gdal y convertir en array
             #generar sam y predictor, guardarlos en la clase parametros
@@ -169,7 +162,7 @@ class dialog_precarga(DialogUi, DialogType):
                 predictor.set_image(arreglo)
             except:
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>No se pudo configurar modelo/imagen</b>', level=0, duration=7)
+                    '<b>No se pudo configurar modelo/imagen</b>', level=0, duration=7)
                 ms = QMessageBox()
                 ms.setText("No se pudo configurar modelo. Verifique archivo de modelo e imagen")
                 ms.setIcon(QMessageBox.Warning)
@@ -236,12 +229,11 @@ class dialog_precarga(DialogUi, DialogType):
                         bac=ba*10000
                         min=minmax[0]*10000
                         max=minmax[1]*10000
-                        ran=max-min
                     else:
                         bac=ba
                         min=minmax[0]
                         max=minmax[1]
-                        ran=max-min
+                    ran=max-min
                     #escalamos de 0 a 255
                     av = 255 / ran
                     b = 255 - av * max
@@ -261,25 +253,19 @@ class dialog_precarga(DialogUi, DialogType):
                     bac=ba*10000
                     min=minmax[0]*10000
                     max=minmax[1]*10000
-                    ran=max-min
                 else:
                     bac=ba
                     min=minmax[0]
                     max=minmax[1]
-                    ran=max-min
+                ran=max-min
                 #escalamos de 0 a 255
                 av = 255 / ran
                 b = 255 - av * max
                 lf=lambda x: av*x+b
                 result = lf(bac).astype(np.uint8)
-                #convertimos a int
-                lbands.append(result)
-                lbands.append(result.copy())
-                lbands.append(result.copy())
+                lbands.extend((result, result.copy(), result.copy()))
             else:
-                lbands.append(ba)
-                lbands.append(ba.copy())
-                lbands.append(ba.copy())
+                lbands.extend((ba, ba.copy(), ba.copy()))
         #else:
         capag=None
         return (np.dstack(lbands),(geotransform,filas,columnas,wkt))
