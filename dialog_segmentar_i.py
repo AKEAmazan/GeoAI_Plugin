@@ -93,7 +93,7 @@ class dialog_segmentar_i(DialogUi, DialogType):
         self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
         progress.setValue(10)
         self.cerrar()    #cerramos el dialogo para evitar que el usuario ejecute de nuevo por equivocacion
-        
+
         if self.defecto.isChecked():
             time.sleep(1)
             progressMessageBar.setText('Procesando segmentacion')
@@ -107,15 +107,15 @@ class dialog_segmentar_i(DialogUi, DialogType):
             epsg=self.param.src.authid()
             image=self.param.arreglo
             #print(' arreglo pasado en param',image)
-            
+
             mask_generator = SamAutomaticMaskGenerator(sam)
             masks = mask_generator.generate(image)
             lmask=[i['segmentation'] for i in masks]
             #print(' lista de mascaras',lmask)
             #carpeta temporal
-            if len(lmask)==0:
+            if not lmask:
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>No se generaron segmentos</b>', level=0, duration=7)
+                    '<b>No se generaron segmentos</b>', level=0, duration=7)
                 ms = QMessageBox()
                 ms.setText("Error en el proceso. No se generaron segmentos")
                 ms.setIcon(QMessageBox.Warning)
@@ -137,7 +137,7 @@ class dialog_segmentar_i(DialogUi, DialogType):
                         listcapas.append(vector)
             else:
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>Error al vectorizar segmentos</b>', level=0, duration=7)
+                    '<b>Error al vectorizar segmentos</b>', level=0, duration=7)
                 ms = QMessageBox()
                 ms.setText("Error al vectorizar segmentos. No se genero la capa de salida")
                 ms.setIcon(QMessageBox.Warning)
@@ -147,13 +147,6 @@ class dialog_segmentar_i(DialogUi, DialogType):
             self.pry.addMapLayer(resultado)
             #proceso finalizado
             time.sleep(1)
-            progress.setValue(100)
-            self.iface.messageBar().clearWidgets()
-            for i in listap:
-                try:
-                    rmtree(i)
-                except:
-                    pass
         else:
             time.sleep(1)
             progressMessageBar.setText('Procesando segmentacion')
@@ -186,9 +179,9 @@ class dialog_segmentar_i(DialogUi, DialogType):
             lmask=[i['segmentation'] for i in masks2]
             #print(' lista de mascaras',lmask)
             #carpeta temporal
-            if len(lmask)==0:
+            if not lmask:
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>No se genraron segmentos</b>', level=0, duration=7)
+                    '<b>No se genraron segmentos</b>', level=0, duration=7)
                 ms = QMessageBox()
                 ms.setText("Error en el proceso. No se generaron segmentos")
                 ms.setIcon(QMessageBox.Warning)
@@ -210,7 +203,7 @@ class dialog_segmentar_i(DialogUi, DialogType):
                         listcapas.append(vector)
             else:
                 self.iface.messageBar().pushMessage('ERROR',\
-                '<b>Error al vectorizar segmentos</b>', level=0, duration=7)
+                    '<b>Error al vectorizar segmentos</b>', level=0, duration=7)
                 ms = QMessageBox()
                 ms.setText("Error al vectorizar segmentos. No se genero la capa de salida")
                 ms.setIcon(QMessageBox.Warning)
@@ -220,12 +213,12 @@ class dialog_segmentar_i(DialogUi, DialogType):
             self.pry.addMapLayer(resultado)
             #proceso finalizado
             time.sleep(1)
-            progress.setValue(100)
-            self.iface.messageBar().clearWidgets()
-            for i in listap:
-                try:
-                    rmtree(i)
-                except:
-                    pass
+        progress.setValue(100)
+        self.iface.messageBar().clearWidgets()
+        for i in listap:
+            try:
+                rmtree(i)
+            except:
+                pass
         
 

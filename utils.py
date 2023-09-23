@@ -25,7 +25,7 @@ def mask_to_imagen(mascara,ruta,nombre,columnas,filas,wkt,geotransform):
     lnombres=[]
     for e,mi in enumerate(mascara):
         arrf=np.where(mi==True,1.0,np.nan)
-        nombrei=nombre+'.tif'
+        nombrei = f'{nombre}.tif'
         #verificacion de nombre archivo
         for a in glob.glob(os.path.join(ruta,"*.tif")):
             nfile=os.path.basename(a)
@@ -68,22 +68,13 @@ def minimo_maximo(imagen):
     return (minimo,maximo)
 
 def crear_capa_salida(lista,epsg,multi=False):
-    if len(lista)>0:
-        #extraer geometrias
-        list_geo=[]
-        if multi:
-            for l in lista:
-                for v in l:
-                    #print(v)
-                    vc=QgsVectorLayer(v,'vector','ogr')
-                    f1=vc.getFeatures('"DN"=1')
-                    f=next(f1)
-                    #print(f)
-                    g=f.geometry()
-                    #print(g)
-                    list_geo.append(g)
-        else:
-            for v in lista:
+    if len(lista) <= 0:
+        return None
+    #extraer geometrias
+    list_geo=[]
+    if multi:
+        for l in lista:
+            for v in l:
                 #print(v)
                 vc=QgsVectorLayer(v,'vector','ogr')
                 f1=vc.getFeatures('"DN"=1')
@@ -92,124 +83,85 @@ def crear_capa_salida(lista,epsg,multi=False):
                 g=f.geometry()
                 #print(g)
                 list_geo.append(g)
+    else:
+        for v in lista:
+            #print(v)
+            vc=QgsVectorLayer(v,'vector','ogr')
+            f1=vc.getFeatures('"DN"=1')
+            f=next(f1)
+            #print(f)
+            g=f.geometry()
+            #print(g)
+            list_geo.append(g)
         #print(' lista geometrias ' ,list_geo)
         #print(epsg)
         #creamos la capa de salida
-        uri = "polygon?crs="+epsg+"&field=id:integer"
-        salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+    uri = f"polygon?crs={epsg}&field=id:integer"
+    salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+    lfeatures=[]
+    provider=salida.dataProvider()
+    for i in list_geo:
+        f=QgsFeature()
+        f.setFields(salida.fields())
+        f.setGeometry(i)
+        lfeatures.append(f)
+    provider.addFeatures(lfeatures)
+    return salida
+        
+def crear_capa_atrib(dic,epsg):
+    if len(dic) <= 0:
+        return None
+        #creamos la capa de salida
+    uri = f"polygon?crs={epsg}&field=id:integer"
+    salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+    #obtenemos el provedor para editar
+    provider=salida.dataProvider()
+    for i in dic:
+        tipo=i[0]
+        ncampo=i[1]
+        valor=i[2]
+        lista=dic[i]
+        #extraer geometrias
+        list_geo=[]
+        for l in lista:
+            for v in l:
+                #print(v)
+                vc=QgsVectorLayer(v,'vector','ogr')
+                f1=vc.getFeatures('"DN"=1')
+                f=next(f1)
+                #print(f)
+                g=f.geometry()
+                #print(g)
+                list_geo.append(g)
+        camp = QgsField(ncampo, QVariant.String)
+        provider.addAttributes([camp])
+        salida.updateFields()
         lfeatures=[]
-        provider=salida.dataProvider()
         for i in list_geo:
             f=QgsFeature()
             f.setFields(salida.fields())
             f.setGeometry(i)
+            f.setAttribute(ncampo, valor)
             lfeatures.append(f)
         provider.addFeatures(lfeatures)
-        return salida
-    else:
-        return None
-        
-def crear_capa_atrib(dic,epsg):
-    if len(dic)>0:
-        #creamos la capa de salida
-        uri = "polygon?crs="+epsg+"&field=id:integer"
-        salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
-        #obtenemos el provedor para editar
-        provider=salida.dataProvider()
-        for i in dic:
-            tipo=i[0]
-            ncampo=i[1]
-            valor=i[2]
-            lista=dic[i]
-            #extraer geometrias
-            list_geo=[]
-            for l in lista:
-                for v in l:
-                    #print(v)
-                    vc=QgsVectorLayer(v,'vector','ogr')
-                    f1=vc.getFeatures('"DN"=1')
-                    f=next(f1)
-                    #print(f)
-                    g=f.geometry()
-                    #print(g)
-                    list_geo.append(g)
-            camp = QgsField(ncampo, QVariant.String)
-            provider.addAttributes([camp])
-            salida.updateFields()
-            lfeatures=[]
-            for i in list_geo:
-                f=QgsFeature()
-                f.setFields(salida.fields())
-                f.setGeometry(i)
-                f.setAttribute(ncampo, valor)
-                lfeatures.append(f)
-            provider.addFeatures(lfeatures)
-        return salida
-    else:
-        return None
+    return salida
 
 def crear_capa_mayor_atrib(dic,epsg):
-    if len(dic)>0:
-        #creamos la capa de salida
-        uri = "polygon?crs="+epsg+"&field=id:integer"
-        salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
-        #obtenemos el provedor para editar
-        provider=salida.dataProvider()
-        for i in dic:
-            tipo=i[0]
-            ncampo=i[1]
-            valor=i[2]
-            lista=dic[i]
-            #extraer geometrias
-            list_geo=[]
-            for l in lista:
-                lgeo=[]
-                for v in l:
-                    #print(v)
-                    vc=QgsVectorLayer(v,'vector','ogr')
-                    f1=vc.getFeatures('"DN"=1')
-                    f=next(f1)
-                    #print(f)
-                    g=f.geometry()
-                    #print(g)
-                    lgeo.append(g)
-                if len(lgeo)>1:
-                #print('mas de una geometria' ,lgeo)
-                    for e,x in enumerate(lgeo):
-                        if e==0:
-                            #print('area ',str(e),x.area())
-                            xs=x
-                        else:
-                            #print('area ',str(e),x.area())
-                            if x.area() >xs.area():
-                                xs=x
-                    list_geo.append(xs)
-                else:
-                    #print('solo una geometria',lgeo)
-                    list_geo.append(lgeo[0])
-            camp = QgsField(ncampo, QVariant.String)
-            provider.addAttributes([camp])
-            salida.triggerRepaint()
-            salida.updateFields()
-            lfeatures=[]
-            for i in list_geo:
-                f=QgsFeature()
-                f.setFields(salida.fields())
-                f.setGeometry(i)
-                f.setAttribute(ncampo, valor)
-                lfeatures.append(f)
-            provider.addFeatures(lfeatures)
-        return salida
-    else:
+    if len(dic) <= 0:
         return None
-        
-def crear_capa_mayor_salida(lista,epsg):
-    if len(lista)>0:
-        #print(' capa mayor salida')
+        #creamos la capa de salida
+    uri = f"polygon?crs={epsg}&field=id:integer"
+    salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+    #obtenemos el provedor para editar
+    provider=salida.dataProvider()
+    for i in dic:
+        tipo=i[0]
+        ncampo=i[1]
+        valor=i[2]
+        lista=dic[i]
         #extraer geometrias
         list_geo=[]
         for l in lista:
-#            print(l)
             lgeo=[]
             for v in l:
                 #print(v)
@@ -220,35 +172,75 @@ def crear_capa_mayor_salida(lista,epsg):
                 g=f.geometry()
                 #print(g)
                 lgeo.append(g)
-            #procesar listas de geometrias
             if len(lgeo)>1:
                 #print('mas de una geometria' ,lgeo)
                 for e,x in enumerate(lgeo):
                     if e==0:
                         #print('area ',str(e),x.area())
                         xs=x
-                    else:
-                        #print('area ',str(e),x.area())
-                        if x.area() >xs.area():
-                            xs=x
+                    elif x.area() >xs.area():
+                        xs=x
                 list_geo.append(xs)
             else:
                 #print('solo una geometria',lgeo)
                 list_geo.append(lgeo[0])
-        #creamos la capa de salida
-        uri = "polygon?crs="+epsg+"&field=id:integer"
-        salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+        camp = QgsField(ncampo, QVariant.String)
+        provider.addAttributes([camp])
+        salida.triggerRepaint()
+        salida.updateFields()
         lfeatures=[]
-        provider=salida.dataProvider()
         for i in list_geo:
             f=QgsFeature()
             f.setFields(salida.fields())
             f.setGeometry(i)
+            f.setAttribute(ncampo, valor)
             lfeatures.append(f)
         provider.addFeatures(lfeatures)
-        return salida
-    else:
+    return salida
+        
+def crear_capa_mayor_salida(lista,epsg):
+    if len(lista) <= 0:
         return None
+    #print(' capa mayor salida')
+    #extraer geometrias
+    list_geo=[]
+    for l in lista:
+#            print(l)
+        lgeo=[]
+        for v in l:
+            #print(v)
+            vc=QgsVectorLayer(v,'vector','ogr')
+            f1=vc.getFeatures('"DN"=1')
+            f=next(f1)
+            #print(f)
+            g=f.geometry()
+            #print(g)
+            lgeo.append(g)
+            #procesar listas de geometrias
+        if len(lgeo)>1:
+                #print('mas de una geometria' ,lgeo)
+            for e,x in enumerate(lgeo):
+                if e==0:
+                    #print('area ',str(e),x.area())
+                    xs=x
+                elif x.area() >xs.area():
+                    xs=x
+            list_geo.append(xs)
+        else:
+            #print('solo una geometria',lgeo)
+            list_geo.append(lgeo[0])
+        #creamos la capa de salida
+    uri = f"polygon?crs={epsg}&field=id:integer"
+    salida = QgsVectorLayer(uri, "ResultadoSAM",  "memory")
+    lfeatures=[]
+    provider=salida.dataProvider()
+    for i in list_geo:
+        f=QgsFeature()
+        f.setFields(salida.fields())
+        f.setGeometry(i)
+        lfeatures.append(f)
+    provider.addFeatures(lfeatures)
+    return salida
 
 def cargar_capa_exist(capa,lista,epsg,multi=False):
     if capa.crs().authid()==epsg:
@@ -308,15 +300,13 @@ def cargar_capa_exist_mayor(capa,lista,epsg):
                 if e==0:
                     #print('area ',str(e),x.area())
                     xs=x
-                else:
-                    #print('area ',str(e),x.area())
-                    if x.area() >xs.area():
-                        xs=x
+                elif x.area() >xs.area():
+                    xs=x
             list_geo.append(xs)
         else:
             #print('solo una geometria',lgeo)
             list_geo.append(lgeo[0])
-        #print(' lista geometrias ' ,list_geo)
+            #print(' lista geometrias ' ,list_geo)
     #print(epsg)
     lfeatures=[]
     provider=capa.dataProvider()
@@ -357,20 +347,20 @@ def cargar_capa_exist_atrib(capa,dic,epsg):
                 if i.name()==ncampo:
                     enc=True
             #print(tipo,ncampo,enc)
-            if tipo=='campo' and not enc:
+            if (
+                tipo == 'campo'
+                and not enc
+                or (tipo != 'crear' or not enc)
+                and tipo == 'crear'
+            ):
                 #print('creeando el campo')
                 #si no existe el campo lo creamos
                 camp = QgsField(ncampo, QVariant.String)
                 provider.addAttributes([camp])
                 capa.triggerRepaint()
-            elif tipo=='crear' and enc:
+            elif tipo == 'crear':
                 #si se pide crear y el campo ya existe
-                ncampo=ncampo+'1'
-                camp = QgsField(ncampo, QVariant.String)
-                provider.addAttributes([camp])
-                capa.triggerRepaint()
-            elif tipo=='crear' and not enc:
-                #si se pide crear y el campo ya existe
+                ncampo = f'{ncampo}1'
                 camp = QgsField(ncampo, QVariant.String)
                 provider.addAttributes([camp])
                 capa.triggerRepaint()
@@ -416,10 +406,8 @@ def cargar_capa_exist_atrib_mayor(capa,dic,epsg):
                         if e==0:
                             #print('area ',str(e),x.area())
                             xs=x
-                        else:
-                            #print('area ',str(e),x.area())
-                            if x.area() >xs.area():
-                                xs=x
+                        elif x.area() >xs.area():
+                            xs=x
                     list_geo.append(xs)
                 else:
                     #print('solo una geometria',lgeo)
@@ -431,20 +419,20 @@ def cargar_capa_exist_atrib_mayor(capa,dic,epsg):
                 if i.name()==ncampo:
                     enc=True
             #print(tipo,ncampo,enc)
-            if tipo=='campo' and not enc:
+            if (
+                tipo == 'campo'
+                and not enc
+                or (tipo != 'crear' or not enc)
+                and tipo == 'crear'
+            ):
                 #print('creeando el campo')
                 #si no existe el campo lo creamos
                 camp = QgsField(ncampo, QVariant.String)
                 provider.addAttributes([camp])
                 capa.triggerRepaint()
-            elif tipo=='crear' and enc:
+            elif tipo == 'crear':
                 #si se pide crear y el campo ya existe
-                ncampo=ncampo+'1'
-                camp = QgsField(ncampo, QVariant.String)
-                provider.addAttributes([camp])
-                capa.triggerRepaint()
-            elif tipo=='crear' and not enc:
-                #si se pide crear y el campo ya existe
+                ncampo = f'{ncampo}1'
                 camp = QgsField(ncampo, QVariant.String)
                 provider.addAttributes([camp])
                 capa.triggerRepaint()

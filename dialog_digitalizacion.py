@@ -328,12 +328,12 @@ class dialog_digitalizacion(DialogUi, DialogType):
         self.cargarCampos(capa)
         
     def cargarCampos(self,capa):
-        if not capa is None:
+        if capa is not None:
             campos=capa.fields()
             if not campos.isEmpty():
                 for f in campos:
                     #print(f.name(),f.typeName())
-                    if f.typeName()=='Text' or f.typeName()=='String' or f.typeName()=='string':
+                    if f.typeName() in ['Text', 'String', 'string']:
                         self.lcampos.addItem(f.name(),f)
         
     def dibujarPunto(self):
